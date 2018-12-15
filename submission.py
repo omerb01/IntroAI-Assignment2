@@ -93,25 +93,30 @@ def betterEvaluationFunction(gameState):
 
     """
 
-    ghosts_distances = [util.manhattanDistance(gameState.getPacmanPosition(), ghost) for ghost in
-                        gameState.getGhostPositions()]
-    closest_ghost_dist = 0
-    if len(ghosts_distances) > 0:
-        closest_ghost_dist = min(ghosts_distances)
-    else:
-        capsules = gameState.getCapsules()
-        print(capsules)
-        return score + 1/util.manhattanDistance(gameState.getPacmanPosition(),capsules[0])
-
-
     capsules_distances = [util.manhattanDistance(gameState.getPacmanPosition(), capsule) for capsule in
                           gameState.getCapsules()]
-    closest_capsule_dist = 0
+    closest_capsule_dist = 1
     if len(capsules_distances) > 0:
         closest_capsule_dist = min(capsules_distances)
+    capsules = gameState.getCapsules()
 
+    capsules_value = 1 / closest_capsule_dist - len(capsules)
 
-    return score + closest_capsule_dist - (1 / closest_ghost_dist) * 10
+    scared_value = 0
+    for ghost_state in gameState.getGhostStates():
+        if ghost_state.scaredTimer > 0:
+            scared_value = 1 / util.manhattanDistance(gameState.getPacmanPosition(), ghost_state.configuration.pos)
+
+    food_distances = []
+    food_grid = gameState.getFood()
+    for x in range(food_grid.width):
+        for y in range(food_grid.height):
+            if food_grid[x][y] is True:
+                food_distances.append(util.manhattanDistance(gameState.getPacmanPosition(), (x, y)))
+    closest_food = min(food_distances)
+    food_value = 1 / closest_food
+
+    return score + capsules_value + scared_value + food_value
 
 
 #     ********* MultiAgent Search Agents- sections c,d,e,f*********
