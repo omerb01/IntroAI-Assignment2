@@ -69,54 +69,80 @@ def betterEvaluationFunction(gameState):
     The GameState class is defined in pacman.py and you might want to look into that for other helper methods.
     """
 
-    h_score = gameState.getScore()
+    score = gameState.getScore()
     food_grid = gameState.getFood()
-    map_size = food_grid.height * food_grid.width
-    capsules_left = map_size*len(gameState.getCapsules())
-    h_score -= capsules_left
-
-
-    chunks_rows = 2
-    chunks_cols = 3
-
-    chunk_height = food_grid.height / chunks_rows
-    chunk_width = food_grid.width / chunks_cols
-
-    chunks = [[0 for y in range(chunks_cols)] for x in range(chunks_rows)]
-
-    print(food_grid.height,food_grid.width)
-    for x in range(food_grid.height) :
-         for y in range(10):
-             print(x,y)
-             if food_grid[x][y] is True :
-                 print ("Here")
-                 chunks[int(x/chunk_height)][int(y/chunk_width)]+=1
-
-    for capsule in gameState.getCapsules():
-        print (capsule)
-
-    ghosts_distances = [util.manhattanDistance(gameState.getPacmanPosition(), ghost) for ghost in
-                        gameState.getGhostPositions()]
-    closest_ghost_dist = 0
-    if len(ghosts_distances) > 0:
-        closest_ghost_dist = min(ghosts_distances)
-    else:
-        capsules = gameState.getCapsules()
-        return h_score + map_size - util.manhattanDistance(gameState.getPacmanPosition(),capsules[0])
-
+    longest_road = food_grid.height + food_grid.width  # longest manheten distance.
+    score -= longest_road * len(gameState.getCapsules())  # giving the number of pills left some values.
+    num_food = gameState.getNumFood()
 
     capsules_distances = [util.manhattanDistance(gameState.getPacmanPosition(), capsule) for capsule in
                           gameState.getCapsules()]
-    closest_capsule_dist = 0
+    closest_capsule_dist = 1
     if len(capsules_distances) > 0:
         closest_capsule_dist = min(capsules_distances)
+    capsules = gameState.getCapsules()
+    capsule_value = closest_capsule_dist
 
+    scared_value = 0
+    ghost_distance = 0
+    num_of_ghosts = len(gameState.getGhostStates())
+    for ghost_state in gameState.getGhostStates():
+        if ghost_state.scaredTimer > 0:
+            scared_value = util.manhattanDistance(gameState.getPacmanPosition(), ghost_state.configuration.pos)
+        else :
+            curr_ghost_distance = util.manhattanDistance(gameState.getPacmanPosition(), ghost_state.configuration.pos)
+            if curr_ghost_distance <= 1 :
+                return -100000000
+            ghost_distance += curr_ghost_distance
+    if num_of_ghosts == 0:
+        ghost_distance /= 1
 
-    return h_score + closest_capsule_dist - (1 / closest_ghost_dist) * 10
+    food_distances = []
+    food_grid = gameState.getFood()
+    for x in range(food_grid.width):
+        for y in range(food_grid.height):
+            if food_grid[x][y] is True:
+                food_distances.append(util.manhattanDistance(gameState.getPacmanPosition(), (x, y)))
 
+    closest_food_value=0
+    total_food_dist=0
+    if (num_food > 0):
+        closest_food_value = min(food_distances)
+        total_food_dist = sum(food_distances) / num_food
+    N_score = 1000000
+    N_scared = 25
+    N_capsules = 5  # if food is more than 50% then chase capsules more
+    N_closest_food = 12
+    N_total_food = 5
+    N_ghosts = 1
+    return N_score * (score)**3 - N_capsules * capsule_value - N_scared * (scared_value)**2 - N_closest_food * (
+        closest_food_value)**2  - N_total_food * (total_food_dist) + N_ghosts * (ghost_distance)**2
 
+"""
+
+    newPos = gameState.getPacmanPosition()
+    newFood = gameState.getFood()
+    newGhostStates = gameState.getGhostStates()
+    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+    foodDistance = 0
+    closestFood = 10000000
+    for x in range(newFood.width):
+        for y in range(newFood.height):
+            if newFood[x][y]:
+                distance = util.manhattanDistance(newPos, (x, y))
+                foodDistance += distance
+                if distance < closestFood:
+                    closestFood = distance
+    ghostDistance = 0
+    for ghost in newGhostStates:
+        ghostDistance += util.manhattanDistance(newPos, ghost.getPosition())
+    if ghostDistance < 2:
+        return -100000000000
+    if foodDistance < 2:
+        return 100000000000
+    return (- foodDistance - 10 * closestFood ** 2 - 10 / (ghostDistance) ** 2 + gameState.getScore() ** 3)
 #     ********* MultiAgent Search Agents- sections c,d,e,f*********
-
+    """
 class MultiAgentSearchAgent(Agent):
     """
       This class provides some common elements to all of your
