@@ -5,7 +5,7 @@ from game import Agent
 class ReflexAgent(Agent):
   """
     A reflex agent chooses an action at each choice point by examining
-    its alternatives via a state evaluation function...
+    its alternatives via a state evaluation function.
   """
   def __init__(self):
     self.lastPositions = []
