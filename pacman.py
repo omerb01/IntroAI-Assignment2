@@ -609,15 +609,13 @@ def replayGame( layout, actions, display ):
 def runGames( layout, pacman, ghosts, display, numGames, record, numTraining = 0, catchExceptions=False, timeout=30 ):
   import __main__
   __main__.__dict__['_display'] = display
+  import textDisplay
 
-  rules = ClassicGameRules(timeout)
-  games = []
-
-  for i in range( numGames ):
+  def map_function(i):
+    rules = ClassicGameRules(timeout)
     beQuiet = i < numTraining
     if beQuiet:
         # Suppress output and graphics
-        import textDisplay
         gameDisplay = textDisplay.NullGraphics()
         rules.quiet = True
     else:
@@ -625,7 +623,6 @@ def runGames( layout, pacman, ghosts, display, numGames, record, numTraining = 0
         rules.quiet = False
     game = rules.newGame(layout, pacman, ghosts, gameDisplay, beQuiet, catchExceptions)
     game.run()
-    if not beQuiet: games.append(game)
 
     if record:
       import time, pickle
@@ -634,6 +631,13 @@ def runGames( layout, pacman, ghosts, display, numGames, record, numTraining = 0
       components = {'layout': layout, 'actions': game.moveHistory}
       pickle.dump(components, f)
       f.close()
+
+    return game
+
+  import pywren_ibm_cloud as pywren
+  pw = pywren.ibm_cf_executor()
+  pw.map(map_function, [i for i in range(numGames)])
+  games = pw.get_result()
 
   if (numGames-numTraining) > 0:
     scores = [game.state.getScore() for game in games]
