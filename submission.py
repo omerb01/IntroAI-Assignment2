@@ -110,7 +110,7 @@ def betterEvaluationFunction(gameState):
         closest_food_value = min(food_distances)
         total_food_dist = sum(food_distances) / num_food
     N_score = 1000000
-    N_scared = 25
+    N_scared = 50
     N_capsules = 5  # if food is more than 50% then chase capsules more
     N_closest_food = 12
     N_total_food = 5
@@ -118,31 +118,6 @@ def betterEvaluationFunction(gameState):
     return N_score * (score)**3 - N_capsules * capsule_value - N_scared * (scared_value)**2 - N_closest_food * (
         closest_food_value)**2  - N_total_food * (total_food_dist) + N_ghosts * (ghost_distance)**2
 
-"""
-
-    newPos = gameState.getPacmanPosition()
-    newFood = gameState.getFood()
-    newGhostStates = gameState.getGhostStates()
-    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
-    foodDistance = 0
-    closestFood = 10000000
-    for x in range(newFood.width):
-        for y in range(newFood.height):
-            if newFood[x][y]:
-                distance = util.manhattanDistance(newPos, (x, y))
-                foodDistance += distance
-                if distance < closestFood:
-                    closestFood = distance
-    ghostDistance = 0
-    for ghost in newGhostStates:
-        ghostDistance += util.manhattanDistance(newPos, ghost.getPosition())
-    if ghostDistance < 2:
-        return -100000000000
-    if foodDistance < 2:
-        return 100000000000
-    return (- foodDistance - 10 * closestFood ** 2 - 10 / (ghostDistance) ** 2 + gameState.getScore() ** 3)
-#     ********* MultiAgent Search Agents- sections c,d,e,f*********
-    """
 class MultiAgentSearchAgent(Agent):
     """
       This class provides some common elements to all of your
