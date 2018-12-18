@@ -89,9 +89,9 @@ def betterEvaluationFunction(gameState):
     for ghost_state in gameState.getGhostStates():
         if ghost_state.scaredTimer > 0:
             scared_value = util.manhattanDistance(gameState.getPacmanPosition(), ghost_state.configuration.pos)
-        else :
+        else:
             curr_ghost_distance = util.manhattanDistance(gameState.getPacmanPosition(), ghost_state.configuration.pos)
-            if curr_ghost_distance <= 1 :
+            if curr_ghost_distance <= 1:
                 return -100000000
             ghost_distance += curr_ghost_distance
     if num_of_ghosts == 0:
@@ -104,19 +104,23 @@ def betterEvaluationFunction(gameState):
             if food_grid[x][y] is True:
                 food_distances.append(util.manhattanDistance(gameState.getPacmanPosition(), (x, y)))
 
-    closest_food_value=0
-    total_food_dist=0
+    closest_food_value = 0
+    total_food_dist = 0
     if (num_food > 0):
         closest_food_value = min(food_distances)
         total_food_dist = sum(food_distances) / num_food
     N_score = 1000000
     N_scared = 50
-    N_capsules = 5  # if food is more than 50% then chase capsules more
+    if (num_food >= 0.3*food_grid.width*food_grid.height):
+        N_capsules = 5  # if food is more than 30%+- then chase capsules more
+    else:
+        N_capsules = 20
     N_closest_food = 12
     N_total_food = 5
     N_ghosts = 1
-    return N_score * (score)**3 - N_capsules * capsule_value - N_scared * (scared_value)**2 - N_closest_food * (
-        closest_food_value)**2  - N_total_food * (total_food_dist) + N_ghosts * (ghost_distance)**2
+    return N_score * (score) ** 3 - N_capsules * capsule_value - N_scared * (scared_value) ** 2 - N_closest_food * (
+        closest_food_value) ** 2 - N_total_food * (total_food_dist) + N_ghosts * (ghost_distance) ** 2
+
 
 class MultiAgentSearchAgent(Agent):
     """
