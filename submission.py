@@ -104,10 +104,15 @@ def betterEvaluationFunction(gameState):
             if food_grid[x][y] is True:
                 food_distances.append(util.manhattanDistance(gameState.getPacmanPosition(), (x, y)))
 
+    closest_food_list = []
     closest_food_value = 0
     total_food_dist = 0
     if (num_food > 0):
-        closest_food_value = min(food_distances)
+        for _ in range(3):
+            if len(food_distances) != 0:
+                closest_food_list.append(min(food_distances))
+                food_distances.remove(closest_food_list[-1])
+        closest_food_value = random.choice(closest_food_list)
         total_food_dist = sum(food_distances) / num_food
     N_score = 1000000
     N_scared = 50
