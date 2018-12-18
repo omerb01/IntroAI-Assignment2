@@ -220,25 +220,24 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 # Pacman Code
                 CurrMax = -numpy.inf
                 MaxAction = None
-                next_agent_index = Turn(agent_index)
-                for move in gameState.getLegalActions(0):
-                    v = GetMinMaxAction(gameState.generatePacmanSuccessor(move), next_agent_index, depth - 1)
-                    if CurrMax < v[0]:
+                for move in gameState.getLegalActions(agent_index):
+                    v = GetMinMaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth - 1)
+                    if CurrMax <= v[0]:
                         CurrMax = v[0]
                         MaxAction = move
                 return (CurrMax, MaxAction)
             else:
                 CurrMin = numpy.inf
                 MinAction = None
-                if Turn(agent_index) == 0:
-                    depth -= 1
-                next_agent_index = Turn(agent_index)
                 for move in gameState.getLegalActions(agent_index):
-                    v = GetMinMaxAction(gameState.generatePacmanSuccessor(move), next_agent_index, depth)
-                    if CurrMin > v[0]:
+                    if Turn(agent_index) == 0:
+                        v = GetMinMaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index),
+                                            depth - 1)
+                    else:
+                        v = GetMinMaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth)
+                    if CurrMin >= v[0]:
                         CurrMin = v[0]
                         MinAction = move
-
                 return (CurrMin, MinAction)
 
         return GetMinMaxAction(gameState, 0, self.depth)[1]
