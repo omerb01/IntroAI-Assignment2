@@ -1,3 +1,4 @@
+import numpy
 import random, util
 from game import Agent
 
@@ -116,7 +117,7 @@ def betterEvaluationFunction(gameState):
         total_food_dist = sum(food_distances) / num_food
     N_score = 1000000
     N_scared = 50
-    if (num_food >= 0.3*food_grid.width*food_grid.height):
+    if (num_food >= 0.3 * food_grid.width * food_grid.height):
         N_capsules = 5  # if food is more than 30%+- then chase capsules more
     else:
         N_capsules = 20
@@ -192,7 +193,56 @@ class MinimaxAgent(MultiAgentSearchAgent):
         """
 
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        def G(gameState):
+            return gameState.isWin() or gameState.isLose()
+
+        def U(gameState):
+            if gameState.isWin():
+                return numpy.inf
+            if gameState.isLose():
+                return -numpy.inf
+
+        def Turn(agent_index):
+            if agent_index + 1 < gameState.getNumAgents():
+                return agent_index + 1
+            else:
+                return 0
+
+        def GetMinMaxAction(gameState, agent_index, depth):
+            # we reached a win or a lose situation.
+            if G(gameState):
+                return (U(gameState), None)
+            # end of search depth.
+            if depth == 0:
+                return (betterEvaluationFunction(gameState), None)
+
+            if agent_index == 0:
+                # Pacman Code
+                CurrMax = -numpy.inf
+                MaxAction = None
+                next_agent_index = Turn(agent_index)
+                for move in gameState.getLegalActions(0):
+                    v = GetMinMaxAction(gameState.generatePacmanSuccessor(move), next_agent_index, depth - 1)
+                    if CurrMax < v[0]:
+                        CurrMax = v[0]
+                        MaxAction = move
+                return (CurrMax, MaxAction)
+            else:
+                CurrMin = numpy.inf
+                MinAction = None
+                if Turn(agent_index) == 0:
+                    depth -= 1
+                next_agent_index = Turn(agent_index)
+                for move in gameState.getLegalActions(agent_index):
+                    v = GetMinMaxAction(gameState.generatePacmanSuccessor(move), next_agent_index, depth)
+                    if CurrMin > v[0]:
+                        CurrMin = v[0]
+                        MinAction = move
+
+                return (CurrMin, MinAction)
+
+        return GetMinMaxAction(gameState, 0, self.depth)[1]
+
         # END_YOUR_CODE
 
 
