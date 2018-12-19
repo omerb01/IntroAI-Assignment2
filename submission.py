@@ -125,7 +125,7 @@ def betterEvaluationFunction(gameState):
     N_total_food = 5
     N_ghosts = 1
     return N_score * (score) ** 3 - N_capsules * capsule_value - N_scared * (scared_value) ** 2 - N_closest_food * (
-        closest_food_value) ** 2 - N_total_food * (total_food_dist) + N_ghosts * (ghost_distance)
+        closest_food_value) ** 2 - N_total_food * (total_food_dist) + N_ghosts * (ghost_distance) ** 2
 
 
 class MultiAgentSearchAgent(Agent):
@@ -349,7 +349,72 @@ class RandomExpectimaxAgent(MultiAgentSearchAgent):
         """
 
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        def G(gameState):
+            return gameState.isWin() or gameState.isLose()
+
+        def U(gameState):
+            if gameState.isWin():
+                return numpy.inf
+            if gameState.isLose():
+                return -numpy.inf
+
+        def Turn(agent_index):
+            if agent_index + 1 < gameState.getNumAgents():
+                return agent_index + 1
+            else:
+                return 0
+
+        def UniformProbability(gameState, agent_index):
+            moves = gameState.getLegalActions(agent_index)
+            states = [gameState.generateSuccessor(agent_index, move) for move in moves]
+            return [(state, 1 / len(moves)) for state in states]
+
+        # The heuristic evaluation function
+        evalFumc = self.evaluationFunction
+
+        def GetExpectimaxAction(gameState, agent_index, depth, Probabilistic):
+            # we reached a win or a lose situation.
+            if G(gameState):
+                return (U(gameState), None)
+            # end of search depth.
+            if depth == 0:
+                return (evalFumc(gameState), None)
+            if Probabilistic:
+                values = []
+                for c, p in UniformProbability(gameState, agent_index):
+                    if Turn(agent_index) == 0:
+                        values.append(p * GetExpectimaxAction(c, Turn(agent_index), depth - 1, False)[0])
+                    else:
+                        values.append(p * GetExpectimaxAction(c, Turn(agent_index), depth, False)[0])
+                return (sum(values), None)
+            if agent_index == 0:
+                # Pacmans turn
+                CurrMax = -numpy.inf
+                MaxAction = None
+                # if there are no agents every call we should go one layer deeper.
+                if gameState.getNumAgents() == 1:
+                    depth -= 1
+                for move in gameState.getLegalActions(agent_index):
+                    v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth,
+                                            False)
+                    if CurrMax <= v[0]:
+                        CurrMax = v[0]
+                        MaxAction = move
+                return (CurrMax, MaxAction)
+            else:
+                # Ghosts turn
+                CurrMin = numpy.inf
+                MinAction = None
+                for move in gameState.getLegalActions(agent_index):
+                    # next turn is another ghost so stay in same depth.
+                    v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), agent_index,
+                                            depth, True)
+                    if CurrMin >= v[0]:
+                        CurrMin = v[0]
+                        MinAction = move
+                return (CurrMin, MinAction)
+
+        return GetExpectimaxAction(gameState, 0, self.depth, False)[1]
         # END_YOUR_CODE
 
 
