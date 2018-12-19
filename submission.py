@@ -125,7 +125,7 @@ def betterEvaluationFunction(gameState):
     N_total_food = 5
     N_ghosts = 1
     return N_score * (score) ** 3 - N_capsules * capsule_value - N_scared * (scared_value) ** 2 - N_closest_food * (
-        closest_food_value) ** 2 - N_total_food * (total_food_dist) + N_ghosts * (ghost_distance) ** 2
+        closest_food_value) ** 2 - N_total_food * (total_food_dist) + N_ghosts * (ghost_distance)
 
 
 class MultiAgentSearchAgent(Agent):
@@ -143,7 +143,7 @@ class MultiAgentSearchAgent(Agent):
       is another abstract class.
     """
 
-    def __init__(self, evalFn='betterEvaluationFunction', depth='4'):
+    def __init__(self, evalFn='betterEvaluationFunction', depth='2'):
         self.index = 0  # Pacman is always agent index 0
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
@@ -207,6 +207,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 return agent_index + 1
             else:
                 return 0
+
         # The heuristic evaluation function
         evalFumc = self.evaluationFunction
 
@@ -223,7 +224,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 MaxAction = None
                 # if there are no agents every call we should go one layer deeper.
                 if gameState.getNumAgents() == 1:
-                    depth-=1
+                    depth -= 1
                 for move in gameState.getLegalActions(agent_index):
                     v = GetMinMaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth)
                     if CurrMax <= v[0]:
@@ -248,7 +249,6 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 return (CurrMin, MinAction)
 
         return GetMinMaxAction(gameState, 0, self.depth)[1]
-
         # END_YOUR_CODE
 
 
@@ -266,7 +266,71 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
 
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        def G(gameState):
+            return gameState.isWin() or gameState.isLose()
+
+        def U(gameState):
+            if gameState.isWin():
+                return numpy.inf
+            if gameState.isLose():
+                return -numpy.inf
+
+        def Turn(agent_index):
+            if agent_index + 1 < gameState.getNumAgents():
+                return agent_index + 1
+            else:
+                return 0
+
+        # The heuristic evaluation function
+        evalFumc = self.evaluationFunction
+
+        def GetMinMaxActionAlphaBeta(gameState, agent_index, depth, alpha, beta):
+            # we reached a win or a lose situation.
+            if G(gameState):
+                return (U(gameState), None)
+            # end of search depth.
+            if depth == 0:
+                return (evalFumc(gameState), None)
+            if agent_index == 0:
+                # Pacmans turn
+                CurrMax = -numpy.inf
+                MaxAction = None
+                # if there are no agents every call we should go one layer deeper.
+                if gameState.getNumAgents() == 1:
+                    depth -= 1
+                for move in gameState.getLegalActions(agent_index):
+                    v = GetMinMaxActionAlphaBeta(gameState.generateSuccessor(agent_index, move), Turn(agent_index),
+                                                 depth, alpha, beta)
+                    if CurrMax <= v[0]:
+                        CurrMax = v[0]
+                        MaxAction = move
+                    alpha = max(CurrMax, alpha)
+                    if CurrMax >= beta:
+                        return (numpy.inf, move)
+                return (CurrMax, MaxAction)
+            else:
+                # Ghosts turn
+                CurrMin = numpy.inf
+                MinAction = None
+                for move in gameState.getLegalActions(agent_index):
+                    if Turn(agent_index) == 0:
+                        # the next turn will be pacmans so go one depth lower.
+                        v = GetMinMaxActionAlphaBeta(gameState.generateSuccessor(agent_index, move), Turn(agent_index),
+                                                     depth - 1, alpha, beta)
+                    else:
+                        # next turn is another ghost so stay in same depth.
+                        v = GetMinMaxActionAlphaBeta(gameState.generateSuccessor(agent_index, move), Turn(agent_index),
+                                                     depth, alpha, beta)
+                    if CurrMin >= v[0]:
+                        CurrMin = v[0]
+                        MinAction = move
+                    if Turn(agent_index) == 0:
+                        beta = min(CurrMin, beta)
+                        if CurrMin <= alpha:
+                            return (-numpy.inf, move)
+                return (CurrMin, MinAction)
+
+        return GetMinMaxActionAlphaBeta(gameState, 0, self.depth, -numpy.inf, numpy.inf)[1]
         # END_YOUR_CODE
 
 
