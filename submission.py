@@ -372,21 +372,13 @@ class RandomExpectimaxAgent(MultiAgentSearchAgent):
         # The heuristic evaluation function
         evalFumc = self.evaluationFunction
 
-        def GetExpectimaxAction(gameState, agent_index, depth, Probabilistic):
+        def GetExpectimaxAction(gameState, agent_index, depth):
             # we reached a win or a lose situation.
             if G(gameState):
                 return (U(gameState), None)
             # end of search depth.
             if depth == 0:
                 return (evalFumc(gameState), None)
-            if Probabilistic:
-                values = []
-                for c, p in UniformProbability(gameState, agent_index):
-                    if Turn(agent_index) == 0:
-                        values.append(p * GetExpectimaxAction(c, Turn(agent_index), depth - 1, False)[0])
-                    else:
-                        values.append(p * GetExpectimaxAction(c, Turn(agent_index), depth, False)[0])
-                return (sum(values), None)
             if agent_index == 0:
                 # Pacmans turn
                 CurrMax = -numpy.inf
@@ -395,26 +387,22 @@ class RandomExpectimaxAgent(MultiAgentSearchAgent):
                 if gameState.getNumAgents() == 1:
                     depth -= 1
                 for move in gameState.getLegalActions(agent_index):
-                    v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth,
-                                            False)
+                    v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth)
                     if CurrMax <= v[0]:
                         CurrMax = v[0]
                         MaxAction = move
                 return (CurrMax, MaxAction)
             else:
                 # Ghosts turn
-                CurrMin = numpy.inf
-                MinAction = None
-                for move in gameState.getLegalActions(agent_index):
-                    # next turn is another ghost so stay in same depth.
-                    v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), agent_index,
-                                            depth, True)
-                    if CurrMin >= v[0]:
-                        CurrMin = v[0]
-                        MinAction = move
-                return (CurrMin, MinAction)
+                values = []
+                for c, p in UniformProbability(gameState, agent_index):
+                    if Turn(agent_index) == 0:
+                        values.append(p * GetExpectimaxAction(c, Turn(agent_index), depth - 1)[0])
+                    else:
+                        values.append(p * GetExpectimaxAction(c, Turn(agent_index), depth)[0])
+                return (sum(values), None)
 
-        return GetExpectimaxAction(gameState, 0, self.depth, False)[1]
+        return GetExpectimaxAction(gameState, 0, self.depth)[1]
         # END_YOUR_CODE
 
 
