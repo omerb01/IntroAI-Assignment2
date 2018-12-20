@@ -1,6 +1,7 @@
 import numpy
 import random, util
 from game import Agent
+from game import Actions
 
 
 #     ********* Reflex agent- sections a and b *********
@@ -421,7 +422,91 @@ class DirectionalExpectimaxAgent(MultiAgentSearchAgent):
         """
 
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        def G(gameState):
+            return gameState.isWin() or gameState.isLose()
+
+        def U(gameState):
+            if gameState.isWin():
+                return numpy.inf
+            if gameState.isLose():
+                return -numpy.inf
+
+        def Turn(agent_index):
+            if agent_index + 1 < gameState.getNumAgents():
+                return agent_index + 1
+            else:
+                return 0
+
+        def getDistribution(gameState, agent_index):
+            # Read variables from state
+            ghostState = gameState.getGhostState(agent_index)
+            legalActions = gameState.getLegalActions(agent_index)
+            pos = gameState.getGhostPosition(agent_index)
+            isScared = ghostState.scaredTimer > 0
+
+            speed = 1
+            if isScared: speed = 0.5
+
+            actionVectors = [Actions.directionToVector(a, speed) for a in legalActions]
+            newPositions = [(pos[0] + a[0], pos[1] + a[1]) for a in actionVectors]
+            pacmanPosition = gameState.getPacmanPosition()
+
+            # Select best actions given the state
+            distancesToPacman = [util.manhattanDistance(pos, pacmanPosition) for pos in newPositions]
+            if isScared:
+                bestScore = max(distancesToPacman)
+                bestProb = 0.8
+            else:
+                bestScore = min(distancesToPacman)
+                bestProb = 0.8
+            bestActions = [action for action, distance in zip(legalActions, distancesToPacman) if distance == bestScore]
+
+            # Construct distribution
+            dist = util.Counter()
+            for a in bestActions: dist[a] = bestProb / len(bestActions)
+            for a in legalActions: dist[a] += (1 - bestProb) / len(legalActions)
+            dist.normalize()
+            return dist
+
+        # The heuristic evaluation function
+        evalFumc = self.evaluationFunction
+
+        def GetExpectimaxAction(gameState, agent_index, depth):
+            # we reached a win or a lose situation.
+            if G(gameState):
+                return (U(gameState), None)
+            # end of search depth.
+            if depth == 0:
+                return (evalFumc(gameState), None)
+            if agent_index == 0:
+                # Pacmans turn
+                CurrMax = -numpy.inf
+                MaxAction = None
+                # if there are no agents every call we should go one layer deeper.
+                if gameState.getNumAgents() == 1:
+                    depth -= 1
+                for move in gameState.getLegalActions(agent_index):
+                    v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth)
+                    if CurrMax <= v[0]:
+                        CurrMax = v[0]
+                        MaxAction = move
+                return (CurrMax, MaxAction)
+            else:
+                # Ghosts turn
+                values = []
+                dist = getDistribution(gameState, agent_index)
+                for action in dist:
+                    if Turn(agent_index) == 0:
+                        values.append(dist[action] *
+                                      GetExpectimaxAction(gameState.generateSuccessor(agent_index, action),
+                                                          Turn(agent_index), depth - 1)[0])
+                    else:
+                        values.append(dist[action] *
+                                      GetExpectimaxAction(gameState.generateSuccessor(agent_index, action),
+                                                          Turn(agent_index), depth)[0])
+                return (sum(values), None)
+
+        return GetExpectimaxAction(gameState, 0, self.depth)[1]
         # END_YOUR_CODE
 
 
