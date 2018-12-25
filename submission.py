@@ -1,4 +1,3 @@
-import numpy
 import random, util
 from game import Agent
 from game import Actions
@@ -70,35 +69,35 @@ def betterEvaluationFunction(gameState):
     gameState.getScore():
     The GameState class is defined in pacman.py and you might want to look into that for other helper methods.
     """
-
+    # split into two parts, when on capsule and when not on capsule,when on capusle stay away from capsules
+    # and go chase ghosts, and if by any chance there is a capsule left and less than 4 food go chase the capsule
     score = gameState.getScore()
     food_grid = gameState.getFood()
+    num_of_capsules = len(gameState.getCapsules())
     longest_road = food_grid.height + food_grid.width  # longest manheten distance.
-    score -= longest_road * len(gameState.getCapsules())  # giving the number of pills left some values.
+    score -= longest_road * num_of_capsules  # giving the number of pills left some values.
     num_food = gameState.getNumFood()
+    infinity = float("inf")
+
+    N_score = 1000000
+    N_scared = 50
+    if (num_food >= 0.3 * food_grid.width * food_grid.height):
+        N_capsules = 5  # if food is more than 30%+- then chase capsules more
+    else:
+        N_capsules = 20
+    N_closest_food = 12
+    N_total_food = 5
+    N_ghosts = 1
 
     capsules_distances = [util.manhattanDistance(gameState.getPacmanPosition(), capsule) for capsule in
                           gameState.getCapsules()]
     closest_capsule_dist = 1
-    if len(capsules_distances) > 0:
+    if num_of_capsules > 0:
         closest_capsule_dist = min(capsules_distances)
     capsules = gameState.getCapsules()
     capsule_value = closest_capsule_dist
 
-    scared_value = 0
-    ghost_distance = 0
-    num_of_ghosts = len(gameState.getGhostStates())
-    for ghost_state in gameState.getGhostStates():
-        if ghost_state.scaredTimer > 0:
-            scared_value = util.manhattanDistance(gameState.getPacmanPosition(), ghost_state.configuration.pos)
-        else:
-            curr_ghost_distance = util.manhattanDistance(gameState.getPacmanPosition(), ghost_state.configuration.pos)
-            if curr_ghost_distance <= 1:
-                return -100000000
-            ghost_distance += curr_ghost_distance
-    if num_of_ghosts == 0:
-        ghost_distance /= 1
-
+    # Calculation of all distances to all foods.
     food_distances = []
     food_grid = gameState.getFood()
     for x in range(food_grid.width):
@@ -106,6 +105,7 @@ def betterEvaluationFunction(gameState):
             if food_grid[x][y] is True:
                 food_distances.append(util.manhattanDistance(gameState.getPacmanPosition(), (x, y)))
 
+    # Calculation of the distance to one out of three closest distances.
     closest_food_list = []
     closest_food_value = 0
     total_food_dist = 0
@@ -116,17 +116,32 @@ def betterEvaluationFunction(gameState):
                 food_distances.remove(closest_food_list[-1])
         closest_food_value = random.choice(closest_food_list)
         total_food_dist = sum(food_distances) / num_food
-    N_score = 1000000
-    N_scared = 50
-    if (num_food >= 0.3 * food_grid.width * food_grid.height):
-        N_capsules = 5  # if food is more than 30%+- then chase capsules more
-    else:
-        N_capsules = 20
-    N_closest_food = 12
-    N_total_food = 5
-    N_ghosts = 1
+
+    scared_value = 0
+    ghost_distance = 0
+
+    num_of_ghosts = len(gameState.getGhostStates())
+    if num_of_ghosts == 0:
+        return  (score) -  (closest_food_value)
+    for ghost_state in gameState.getGhostStates():
+        if ghost_state.scaredTimer > 0:  # we are in capsule mode.
+            scared_value = util.manhattanDistance(gameState.getPacmanPosition(), ghost_state.configuration.pos)
+            if closest_capsule_dist <= 1:
+                return -100000000
+            return N_score * (score) ** 3 + N_capsules * capsule_value - N_scared * (scared_value) ** 3 - (
+                closest_food_value)
+        else:  # we are not in capsule mode.
+            curr_ghost_distance = util.manhattanDistance(gameState.getPacmanPosition(), ghost_state.configuration.pos)
+            if curr_ghost_distance <= 1:
+                return -infinity
+            ghost_distance += curr_ghost_distance
+    ghost_distance /= num_of_ghosts
+
+    if (num_food <= 3) and (num_of_capsules >= 1):
+        return N_score * (score) ** 3 - N_capsules * capsule_value
+
     return N_score * (score) ** 3 - N_capsules * capsule_value - N_scared * (scared_value) ** 2 - N_closest_food * (
-        closest_food_value) ** 2 - N_total_food * (total_food_dist) + N_ghosts * (ghost_distance) ** 2
+        closest_food_value) - N_total_food * (total_food_dist) + N_ghosts * (ghost_distance) ** 2
 
 
 class MultiAgentSearchAgent(Agent):
@@ -199,9 +214,9 @@ class MinimaxAgent(MultiAgentSearchAgent):
 
         def U(gameState):
             if gameState.isWin():
-                return numpy.inf
+                return float("inf")
             if gameState.isLose():
-                return -numpy.inf
+                return -float("inf")
 
         def Turn(agent_index):
             if agent_index + 1 < gameState.getNumAgents():
@@ -221,7 +236,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 return (evalFumc(gameState), None)
             if agent_index == 0:
                 # Pacmans turn
-                CurrMax = -numpy.inf
+                CurrMax = -float("inf")
                 MaxAction = None
                 # if there are no agents every call we should go one layer deeper.
                 if gameState.getNumAgents() == 1:
@@ -234,7 +249,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 return (CurrMax, MaxAction)
             else:
                 # Ghosts turn
-                CurrMin = numpy.inf
+                CurrMin = float("inf")
                 MinAction = None
                 for move in gameState.getLegalActions(agent_index):
                     if Turn(agent_index) == 0:
@@ -272,9 +287,9 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
         def U(gameState):
             if gameState.isWin():
-                return numpy.inf
+                return float("inf")
             if gameState.isLose():
-                return -numpy.inf
+                return -float("inf")
 
         def Turn(agent_index):
             if agent_index + 1 < gameState.getNumAgents():
@@ -294,7 +309,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 return (evalFumc(gameState), None)
             if agent_index == 0:
                 # Pacmans turn
-                CurrMax = -numpy.inf
+                CurrMax = -float("inf")
                 MaxAction = None
                 # if there are no agents every call we should go one layer deeper.
                 if gameState.getNumAgents() == 1:
@@ -307,11 +322,11 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                         MaxAction = move
                     alpha = max(CurrMax, alpha)
                     if CurrMax >= beta:
-                        return (numpy.inf, move)
+                        return (float("inf"), move)
                 return (CurrMax, MaxAction)
             else:
                 # Ghosts turn
-                CurrMin = numpy.inf
+                CurrMin = float("inf")
                 MinAction = None
                 for move in gameState.getLegalActions(agent_index):
                     if Turn(agent_index) == 0:
@@ -328,10 +343,10 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                     if Turn(agent_index) == 0:
                         beta = min(CurrMin, beta)
                         if CurrMin <= alpha:
-                            return (-numpy.inf, move)
+                            return (-float("inf"), move)
                 return (CurrMin, MinAction)
 
-        return GetMinMaxActionAlphaBeta(gameState, 0, self.depth, -numpy.inf, numpy.inf)[1]
+        return GetMinMaxActionAlphaBeta(gameState, 0, self.depth, -float("inf"), float("inf"))[1]
         # END_YOUR_CODE
 
 
@@ -355,9 +370,9 @@ class RandomExpectimaxAgent(MultiAgentSearchAgent):
 
         def U(gameState):
             if gameState.isWin():
-                return numpy.inf
+                return float("inf")
             if gameState.isLose():
-                return -numpy.inf
+                return -float("inf")
 
         def Turn(agent_index):
             if agent_index + 1 < gameState.getNumAgents():
@@ -373,37 +388,49 @@ class RandomExpectimaxAgent(MultiAgentSearchAgent):
         # The heuristic evaluation function
         evalFumc = self.evaluationFunction
 
-        def GetExpectimaxAction(gameState, agent_index, depth):
+        def GetExpectimaxAction(gameState, agent_index, depth, Probabilistic):
             # we reached a win or a lose situation.
             if G(gameState):
                 return (U(gameState), None)
             # end of search depth.
             if depth == 0:
                 return (evalFumc(gameState), None)
+            if Probabilistic:
+                values = []
+                for c, p in UniformProbability(gameState, agent_index):
+                    if Turn(agent_index) == 0:
+                        values.append(p * GetExpectimaxAction(c, Turn(agent_index), depth - 1, False)[0])
+                    else:
+                        values.append(p * GetExpectimaxAction(c, Turn(agent_index), depth, False)[0])
+                return (sum(values), None)
             if agent_index == 0:
                 # Pacmans turn
-                CurrMax = -numpy.inf
+                CurrMax = -float("inf")
                 MaxAction = None
                 # if there are no agents every call we should go one layer deeper.
                 if gameState.getNumAgents() == 1:
                     depth -= 1
                 for move in gameState.getLegalActions(agent_index):
-                    v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth)
+                    v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth,
+                                            False)
                     if CurrMax <= v[0]:
                         CurrMax = v[0]
                         MaxAction = move
                 return (CurrMax, MaxAction)
             else:
                 # Ghosts turn
-                values = []
-                for c, p in UniformProbability(gameState, agent_index):
-                    if Turn(agent_index) == 0:
-                        values.append(p * GetExpectimaxAction(c, Turn(agent_index), depth - 1)[0])
-                    else:
-                        values.append(p * GetExpectimaxAction(c, Turn(agent_index), depth)[0])
-                return (sum(values), None)
+                CurrMin = float("inf")
+                MinAction = None
+                for move in gameState.getLegalActions(agent_index):
+                    # next turn is another ghost so stay in same depth.
+                    v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), agent_index,
+                                            depth, True)
+                    if CurrMin >= v[0]:
+                        CurrMin = v[0]
+                        MinAction = move
+                return (CurrMin, MinAction)
 
-        return GetExpectimaxAction(gameState, 0, self.depth)[1]
+        return GetExpectimaxAction(gameState, 0, self.depth, False)[1]
         # END_YOUR_CODE
 
 
@@ -427,9 +454,9 @@ class DirectionalExpectimaxAgent(MultiAgentSearchAgent):
 
         def U(gameState):
             if gameState.isWin():
-                return numpy.inf
+                return float("inf")
             if gameState.isLose():
-                return -numpy.inf
+                return -float("inf")
 
         def Turn(agent_index):
             if agent_index + 1 < gameState.getNumAgents():
@@ -480,7 +507,7 @@ class DirectionalExpectimaxAgent(MultiAgentSearchAgent):
                 return (evalFumc(gameState), None)
             if agent_index == 0:
                 # Pacmans turn
-                CurrMax = -numpy.inf
+                CurrMax = -float("inf")
                 MaxAction = None
                 # if there are no agents every call we should go one layer deeper.
                 if gameState.getNumAgents() == 1:
