@@ -3,8 +3,44 @@ import random, util
 from game import Agent
 from game import Actions
 
-
 #     ********* Reflex agent- sections a and b *********
+
+class OriginalReflexAgent(Agent):
+    """
+      A reflex agent chooses an action at each choice point by examining
+      its alternatives via a state evaluation function.
+    """
+
+    def __init__(self):
+        self.lastPositions = []
+        self.dc = None
+
+    def getAction(self, gameState):
+        """
+        getAction chooses among the best options according to the evaluation function.
+
+        getAction takes a GameState and returns some Directions.X for some X in the set {North, South, West, East, Stop}
+        ------------------------------------------------------------------------------
+        """
+        # Collect legal moves and successor states
+        legalMoves = gameState.getLegalActions()
+
+        # Choose one of the best actions
+        scores = [self.evaluationFunction(gameState, action) for action in legalMoves]
+        bestScore = max(scores)
+        bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
+        chosenIndex = random.choice(bestIndices)  # Pick randomly among the best
+
+        return legalMoves[chosenIndex]
+
+    def evaluationFunction(self, currentGameState, action):
+        """
+        The evaluation function takes in the current GameState (pacman.py) and the proposed action
+        and returns a number, where higher numbers are better.
+        """
+        successorGameState = currentGameState.generatePacmanSuccessor(action)
+        return scoreEvaluationFunction(successorGameState)
+
 class ReflexAgent(Agent):
     """
       A reflex agent chooses an action at each choice point by examining
