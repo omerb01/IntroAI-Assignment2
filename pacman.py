@@ -634,9 +634,11 @@ def runGames( layout, pacman, ghosts, display, numGames, record, numTraining = 0
 
     return game
 
-  layouts = ['capsuleClassic', 'contestClassic', 'mediumClassic',
-             'minimaxClassic', 'openClassic', 'originalClassic',
-             'smallClassic', 'testClassic', 'trappedClassic', 'trickyClassic']
+  # layouts = ['capsuleClassic', 'contestClassic', 'mediumClassic',
+  #            'minimaxClassic', 'openClassic', 'originalClassic',
+  #            'smallClassic', 'testClassic', 'trappedClassic', 'trickyClassic']
+
+  layouts = ['trickyClassic']
 
   from layout import getLayout
   import pywren_ibm_cloud as pywren
@@ -647,7 +649,7 @@ def runGames( layout, pacman, ghosts, display, numGames, record, numTraining = 0
     gs = pw.get_result()
     total_games.append((gs,mylayout))
 
-  print("AGENT:", pacman.__class__.__name__)
+  print("\nAGENT:", pacman.__class__.__name__)
   for games, mylayout in total_games:
     if (numGames-numTraining) > 0:
       scores = [game.state.getScore() for game in games]
