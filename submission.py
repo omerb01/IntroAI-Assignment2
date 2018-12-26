@@ -77,16 +77,6 @@ def betterEvaluationFunction(gameState):
     score -= longest_road * len(gameState.getCapsules())  # giving the number of pills left some values.
     num_food = gameState.getNumFood()
 
-    N_score = 100
-    N_scared = 50
-    if (num_food >= 0.3 * food_grid.width * food_grid.height):
-        N_capsules = 5  # if food is more than 30%+- then chase capsules more
-    else:
-        N_capsules = 20
-    N_closest_food = 12
-    N_total_food = 5
-    N_ghosts = 1
-
     capsules_distances = [util.manhattanDistance(gameState.getPacmanPosition(), capsule) for capsule in
                           gameState.getCapsules()]
     closest_capsule_dist = 1
@@ -98,22 +88,16 @@ def betterEvaluationFunction(gameState):
     scared_value = 0
     ghost_distance = 0
     num_of_ghosts = len(gameState.getGhostStates())
-    if num_of_ghosts == 0:
-        N_ghosts = 0
-        N_scared = 0
     for ghost_state in gameState.getGhostStates():
         if ghost_state.scaredTimer > 0:
             scared_value = util.manhattanDistance(gameState.getPacmanPosition(), ghost_state.configuration.pos)
-            N_capsules *= -1
-            N_closest_food = 1
-            N_total_food = 0
-            N_scared = 10000
         else:
             curr_ghost_distance = util.manhattanDistance(gameState.getPacmanPosition(), ghost_state.configuration.pos)
             if curr_ghost_distance <= 1:
-                return -1000000000
+                return -100000000
             ghost_distance += curr_ghost_distance
-    ghost_distance /= num_of_ghosts
+    if num_of_ghosts == 0:
+        ghost_distance /= 1
 
     food_distances = []
     food_grid = gameState.getFood()
@@ -132,9 +116,17 @@ def betterEvaluationFunction(gameState):
                 food_distances.remove(closest_food_list[-1])
         closest_food_value = random.choice(closest_food_list)
         total_food_dist = sum(food_distances) / num_food
-
-    return N_score * (score)**3 - N_capsules * capsule_value - N_scared * (scared_value)  - N_closest_food * (
-        closest_food_value)  - N_total_food * (total_food_dist) + N_ghosts * (ghost_distance)
+    N_score = 1000000
+    N_scared = 50
+    if (num_food >= 0.3 * food_grid.width * food_grid.height):
+        N_capsules = 5  # if food is more than 30%+- then chase capsules more
+    else:
+        N_capsules = 20
+    N_closest_food = 12
+    N_total_food = 5
+    N_ghosts = 1
+    return N_score * (score) ** 3 - N_capsules * capsule_value - N_scared * (scared_value) ** 2 - N_closest_food * (
+        closest_food_value) ** 2 - N_total_food * (total_food_dist) + N_ghosts * (ghost_distance) ** 2
 
 
 class MultiAgentSearchAgent(Agent):
