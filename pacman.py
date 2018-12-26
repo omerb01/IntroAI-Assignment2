@@ -611,7 +611,7 @@ def runGames( layout, pacman, ghosts, display, numGames, record, numTraining = 0
   __main__.__dict__['_display'] = display
   import textDisplay
 
-  def map_function(i):
+  def map_function(i, mylayout):
     rules = ClassicGameRules(timeout)
     beQuiet = i < numTraining
     if beQuiet:
@@ -621,34 +621,47 @@ def runGames( layout, pacman, ghosts, display, numGames, record, numTraining = 0
     else:
         gameDisplay = display
         rules.quiet = False
-    game = rules.newGame(layout, pacman, ghosts, gameDisplay, beQuiet, catchExceptions)
+    game = rules.newGame(mylayout, pacman, ghosts, gameDisplay, beQuiet, catchExceptions)
     game.run()
 
     if record:
       import time, pickle
       fname = ('recorded-game-%d' % (i + 1)) +  '-'.join([str(t) for t in time.localtime()[1:6]])
       f = file(fname, 'w')
-      components = {'layout': layout, 'actions': game.moveHistory}
+      components = {'layout': mylayout, 'actions': game.moveHistory}
       pickle.dump(components, f)
       f.close()
 
     return game
 
+  layouts = ['capsuleClassic', 'contestClassic', 'mediumClassic',
+             'minimaxClassic', 'openClassic', 'originalClassic',
+             'smallClassic', 'testClassic', 'trappedClassic', 'trickyClassic']
+
+  from layout import getLayout
   import pywren_ibm_cloud as pywren
-  pw = pywren.ibm_cf_executor()
-  pw.map(map_function, [i for i in range(numGames)])
-  games = pw.get_result()
+  total_games = []
+  for mylayout in layouts:
+    pw = pywren.ibm_cf_executor()
+    pw.map(map_function, [[i,getLayout(mylayout)] for i in range(numGames)])
+    gs = pw.get_result()
+    total_games.append((gs,mylayout))
 
-  if (numGames-numTraining) > 0:
-    scores = [game.state.getScore() for game in games]
-    wins = [game.state.isWin() for game in games]
-    winRate = wins.count(True)/ float(len(wins))
-    print('Average Score:', sum(scores) / float(len(scores)))
-    print('Scores:       ', ', '.join([str(score) for score in scores]))
-    print('Win Rate:      %d/%d (%.2f)' % (wins.count(True), len(wins), winRate))
-    print('Record:       ', ', '.join([ ['Loss', 'Win'][int(w)] for w in wins]))
+  print("AGENT:")
+  for games, mylayout in total_games:
+    if (numGames-numTraining) > 0:
+      scores = [game.state.getScore() for game in games]
+      times = [game.my_avg_time for game in games]
+      wins = [game.state.isWin() for game in games]
+      winRate = wins.count(True)/ float(len(wins))
+      print('\nLayout:', mylayout)
+      print('Average Score:', sum(scores) / float(len(scores)))
+      print('Average Action Time:', sum(times) / float(len(times)))
+      print('Scores:       ', ', '.join([str(score) for score in scores]))
+      print('Win Rate:      %d/%d (%.2f)' % (wins.count(True), len(wins), winRate))
+      print('Record:       ', ', '.join([ ['Loss', 'Win'][int(w)] for w in wins]))
 
-  return games
+  return total_games
 
 if __name__ == '__main__':
   """
