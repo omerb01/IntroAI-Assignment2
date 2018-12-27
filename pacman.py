@@ -634,11 +634,8 @@ def runGames( layout, pacman, ghosts, display, numGames, record, numTraining = 0
 
     return game
 
-  # layouts = ['capsuleClassic', 'contestClassic', 'mediumClassic',
-  #            'minimaxClassic', 'openClassic', 'originalClassic',
-  #            'smallClassic', 'testClassic', 'trappedClassic', 'trickyClassic']
-
-  layouts = ['trickyClassic']
+  layouts = ['openClassic', 'originalClassic',
+             'smallClassic', 'testClassic', 'trappedClassic', 'trickyClassic']
 
   from layout import getLayout
   import pywren_ibm_cloud as pywren
