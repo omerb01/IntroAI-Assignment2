@@ -251,27 +251,31 @@ class MinimaxAgent(MultiAgentSearchAgent):
         def GetMinMaxAction(gameState, agent_index, depth):
             # we reached a win or a lose situation.
             if G(gameState):
-                return (U(gameState), None)
+                return (U(gameState), None, depth)
             # end of search depth.
             if depth == 0:
-                return (evalFumc(gameState), None)
+                return (evalFumc(gameState), None, depth)
             if agent_index == 0:
                 # Pacmans turn
                 CurrMax = -numpy.inf
                 MaxAction = None
-                # if there are no agents every call we should go one layer deeper.
-                if gameState.getNumAgents() == 1:
-                    depth -= 1
+                maxDepth = -numpy.inf
                 for move in gameState.getLegalActions(agent_index):
-                    v = GetMinMaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth)
-                    if CurrMax <= v[0]:
+                    # if there are no agents every call we should go one layer deeper.
+                    if gameState.getNumAgents() == 1:
+                        v = GetMinMaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth-1)
+                    else:
+                        v = GetMinMaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth)
+                    if CurrMax < v[0] or (CurrMax == v[0] and maxDepth < v[2]):
                         CurrMax = v[0]
                         MaxAction = move
-                return (CurrMax, MaxAction)
+                        maxDepth = v[2]
+                return (CurrMax, MaxAction, maxDepth)
             else:
                 # Ghosts turn
                 CurrMin = numpy.inf
                 MinAction = None
+                maxDepth = -numpy.inf
                 for move in gameState.getLegalActions(agent_index):
                     if Turn(agent_index) == 0:
                         # the next turn will be pacmans so go one depth lower.
@@ -280,10 +284,11 @@ class MinimaxAgent(MultiAgentSearchAgent):
                     else:
                         # next turn is another ghost so stay in same depth.
                         v = GetMinMaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth)
-                    if CurrMin >= v[0]:
+                    if CurrMin > v[0] or (CurrMin == v[0] and maxDepth < v[2]):
                         CurrMin = v[0]
                         MinAction = move
-                return (CurrMin, MinAction)
+                        maxDepth = v[2]
+                return (CurrMin, MinAction, maxDepth)
 
         return GetMinMaxAction(gameState, 0, self.depth)[1]
         # END_YOUR_CODE
@@ -324,31 +329,36 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         def GetMinMaxActionAlphaBeta(gameState, agent_index, depth, alpha, beta):
             # we reached a win or a lose situation.
             if G(gameState):
-                return (U(gameState), None)
+                return (U(gameState), None, depth)
             # end of search depth.
             if depth == 0:
-                return (evalFumc(gameState), None)
+                return (evalFumc(gameState), None, depth)
             if agent_index == 0:
                 # Pacmans turn
                 CurrMax = -numpy.inf
                 MaxAction = None
-                # if there are no agents every call we should go one layer deeper.
-                if gameState.getNumAgents() == 1:
-                    depth -= 1
+                maxDepth = -numpy.inf
                 for move in gameState.getLegalActions(agent_index):
-                    v = GetMinMaxActionAlphaBeta(gameState.generateSuccessor(agent_index, move), Turn(agent_index),
-                                                 depth, alpha, beta)
-                    if CurrMax <= v[0]:
+                    # if there are no agents every call we should go one layer deeper.
+                    if gameState.getNumAgents() == 1:
+                        v = GetMinMaxActionAlphaBeta(gameState.generateSuccessor(agent_index, move), Turn(agent_index),
+                                                 depth-1, alpha, beta)
+                    else:
+                        v = GetMinMaxActionAlphaBeta(gameState.generateSuccessor(agent_index, move), Turn(agent_index),
+                                                     depth-1, alpha, beta)
+                    if CurrMax < v[0] or (CurrMax == v[0] and maxDepth < v[2]):
                         CurrMax = v[0]
                         MaxAction = move
+                        maxDepth = v[2]
                     alpha = max(CurrMax, alpha)
                     if CurrMax >= beta:
-                        return (numpy.inf, move)
-                return (CurrMax, MaxAction)
+                        return (numpy.inf, move, maxDepth)
+                return (CurrMax, MaxAction, maxDepth)
             else:
                 # Ghosts turn
                 CurrMin = numpy.inf
                 MinAction = None
+                maxDepth = -numpy.inf
                 for move in gameState.getLegalActions(agent_index):
                     if Turn(agent_index) == 0:
                         # the next turn will be pacmans so go one depth lower.
@@ -358,14 +368,15 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                         # next turn is another ghost so stay in same depth.
                         v = GetMinMaxActionAlphaBeta(gameState.generateSuccessor(agent_index, move), Turn(agent_index),
                                                      depth, alpha, beta)
-                    if CurrMin >= v[0]:
+                    if CurrMin > v[0] or (CurrMin == v[0] and maxDepth < v[2]):
                         CurrMin = v[0]
                         MinAction = move
+                        maxDepth = v[2]
                     if Turn(agent_index) == 0:
                         beta = min(CurrMin, beta)
                         if CurrMin <= alpha:
-                            return (-numpy.inf, move)
-                return (CurrMin, MinAction)
+                            return (-numpy.inf, move, maxDepth)
+                return (CurrMin, MinAction, maxDepth)
 
         return GetMinMaxActionAlphaBeta(gameState, 0, self.depth, -numpy.inf, numpy.inf)[1]
         # END_YOUR_CODE
@@ -412,32 +423,38 @@ class RandomExpectimaxAgent(MultiAgentSearchAgent):
         def GetExpectimaxAction(gameState, agent_index, depth):
             # we reached a win or a lose situation.
             if G(gameState):
-                return (U(gameState), None)
+                return (U(gameState), None, depth)
             # end of search depth.
             if depth == 0:
-                return (evalFumc(gameState), None)
+                return (evalFumc(gameState), None, depth)
             if agent_index == 0:
                 # Pacmans turn
                 CurrMax = -numpy.inf
                 MaxAction = None
-                # if there are no agents every call we should go one layer deeper.
-                if gameState.getNumAgents() == 1:
-                    depth -= 1
+                maxDepth = -numpy.inf
                 for move in gameState.getLegalActions(agent_index):
-                    v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth)
-                    if CurrMax <= v[0]:
+                    # if there are no agents every call we should go one layer deeper.
+                    if gameState.getNumAgents() == 1:
+                        v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth-1)
+                    else:
+                        v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth)
+                    if CurrMax < v[0] or (CurrMax == v[0] and maxDepth < v[2]):
                         CurrMax = v[0]
                         MaxAction = move
-                return (CurrMax, MaxAction)
+                        maxDepth = v[2]
+                return (CurrMax, MaxAction, maxDepth)
             else:
                 # Ghosts turn
                 values = []
+                depths = []
                 for c, p in UniformProbability(gameState, agent_index):
                     if Turn(agent_index) == 0:
-                        values.append(p * GetExpectimaxAction(c, Turn(agent_index), depth - 1)[0])
+                        v = GetExpectimaxAction(c, Turn(agent_index), depth - 1)
                     else:
-                        values.append(p * GetExpectimaxAction(c, Turn(agent_index), depth)[0])
-                return (sum(values), None)
+                        v = GetExpectimaxAction(c, Turn(agent_index), depth)
+                    values.append(p * v[0])
+                    depths.append(v[2])
+                return (sum(values), None, max(depths))
 
         return GetExpectimaxAction(gameState, 0, self.depth)[1]
         # END_YOUR_CODE
@@ -510,37 +527,41 @@ class DirectionalExpectimaxAgent(MultiAgentSearchAgent):
         def GetExpectimaxAction(gameState, agent_index, depth):
             # we reached a win or a lose situation.
             if G(gameState):
-                return (U(gameState), None)
+                return (U(gameState), None, depth)
             # end of search depth.
             if depth == 0:
-                return (evalFumc(gameState), None)
+                return (evalFumc(gameState), None, depth)
             if agent_index == 0:
                 # Pacmans turn
                 CurrMax = -numpy.inf
                 MaxAction = None
-                # if there are no agents every call we should go one layer deeper.
-                if gameState.getNumAgents() == 1:
-                    depth -= 1
+                maxDepth = -numpy.inf
                 for move in gameState.getLegalActions(agent_index):
-                    v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth)
-                    if CurrMax <= v[0]:
+                    # if there are no agents every call we should go one layer deeper.
+                    if gameState.getNumAgents() == 1:
+                        v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth-1)
+                    else:
+                        v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth)
+                    if CurrMax < v[0] or (CurrMax == v[0] and maxDepth < v[2]):
                         CurrMax = v[0]
                         MaxAction = move
-                return (CurrMax, MaxAction)
+                        maxDepth = v[2]
+                return (CurrMax, MaxAction, maxDepth)
             else:
                 # Ghosts turn
                 values = []
                 dist = getDistribution(gameState, agent_index)
+                depths = []
                 for action in dist:
                     if Turn(agent_index) == 0:
-                        values.append(dist[action] *
-                                      GetExpectimaxAction(gameState.generateSuccessor(agent_index, action),
-                                                          Turn(agent_index), depth - 1)[0])
+                        v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, action),
+                                                Turn(agent_index), depth - 1)
                     else:
-                        values.append(dist[action] *
-                                      GetExpectimaxAction(gameState.generateSuccessor(agent_index, action),
-                                                          Turn(agent_index), depth)[0])
-                return (sum(values), None)
+                        v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, action),
+                                                Turn(agent_index), depth)
+                    values.append(dist[action] * v[0])
+                    depths.append(v[2])
+                return (sum(values), None, max(depths))
 
         return GetExpectimaxAction(gameState, 0, self.depth)[1]
         # END_YOUR_CODE
