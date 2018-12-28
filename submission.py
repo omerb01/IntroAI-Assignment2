@@ -585,5 +585,6 @@ class CompetitionAgent(MultiAgentSearchAgent):
         """
 
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        agent = RandomExpectimaxAgent(depth='3')
+        return agent.getAction(gameState)
         # END_YOUR_CODE
