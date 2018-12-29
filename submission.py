@@ -3,6 +3,7 @@ import random, util
 from game import Agent
 from game import Actions
 
+
 #     ********* Reflex agent- sections a and b *********
 
 class OriginalReflexAgent(Agent):
@@ -40,6 +41,7 @@ class OriginalReflexAgent(Agent):
         """
         successorGameState = currentGameState.generatePacmanSuccessor(action)
         return scoreEvaluationFunction(successorGameState)
+
 
 class ReflexAgent(Agent):
     """
@@ -113,6 +115,7 @@ def betterEvaluationFunction(gameState):
     score -= longest_road * len(gameState.getCapsules())  # giving the number of pills left some values.
     num_food = gameState.getNumFood()
 
+    #Calculating the closest capsule distance
     capsules_distances = [util.manhattanDistance(gameState.getPacmanPosition(), capsule) for capsule in
                           gameState.getCapsules()]
     closest_capsule_dist = 1
@@ -121,6 +124,7 @@ def betterEvaluationFunction(gameState):
     capsules = gameState.getCapsules()
     capsule_value = closest_capsule_dist
 
+    #Calculating ghosts distances and if we are chasing them or they're chasing us
     scared_value = 0
     ghost_distance = 0
     num_of_ghosts = len(gameState.getGhostStates())
@@ -135,6 +139,7 @@ def betterEvaluationFunction(gameState):
     if num_of_ghosts == 0:
         ghost_distance /= 1
 
+    #Calculating the distances to all food.
     food_distances = []
     food_grid = gameState.getFood()
     for x in range(food_grid.width):
@@ -142,6 +147,7 @@ def betterEvaluationFunction(gameState):
             if food_grid[x][y] is True:
                 food_distances.append(util.manhattanDistance(gameState.getPacmanPosition(), (x, y)))
 
+    #Calcukating the closest food distance(top 3 if available)
     closest_food_list = []
     closest_food_value = 0
     total_food_dist = 0
@@ -155,6 +161,8 @@ def betterEvaluationFunction(gameState):
                     food_distances.remove(closest_food_list[-1])
             closest_food_value = random.choice(closest_food_list)
         total_food_dist = sum(food_distances) / num_food
+
+    #Giving more and less value to some of the parameters
     N_score = 1000000
     N_scared = 50
     if (num_food >= 0.3 * food_grid.width * food_grid.height):
@@ -266,7 +274,8 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 for move in gameState.getLegalActions(agent_index):
                     # if there are no agents every call we should go one layer deeper.
                     if gameState.getNumAgents() == 1:
-                        v = GetMinMaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth-1)
+                        v = GetMinMaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index),
+                                            depth - 1)
                     else:
                         v = GetMinMaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth)
                     if CurrMax < v[0] or (CurrMax == v[0] and maxDepth < v[2]):
@@ -345,10 +354,10 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                     # if there are no agents every call we should go one layer deeper.
                     if gameState.getNumAgents() == 1:
                         v = GetMinMaxActionAlphaBeta(gameState.generateSuccessor(agent_index, move), Turn(agent_index),
-                                                 depth-1, alpha, beta)
+                                                     depth - 1, alpha, beta)
                     else:
                         v = GetMinMaxActionAlphaBeta(gameState.generateSuccessor(agent_index, move), Turn(agent_index),
-                                                     depth-1, alpha, beta)
+                                                     depth - 1, alpha, beta)
                     if CurrMax < v[0] or (CurrMax == v[0] and maxDepth < v[2]):
                         CurrMax = v[0]
                         MaxAction = move
@@ -438,9 +447,11 @@ class RandomExpectimaxAgent(MultiAgentSearchAgent):
                 for move in gameState.getLegalActions(agent_index):
                     # if there are no agents every call we should go one layer deeper.
                     if gameState.getNumAgents() == 1:
-                        v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth-1)
+                        v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index),
+                                                depth - 1)
                     else:
-                        v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth)
+                        v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index),
+                                                depth)
                     if CurrMax < v[0] or (CurrMax == v[0] and maxDepth < v[2]):
                         CurrMax = v[0]
                         MaxAction = move
@@ -542,9 +553,11 @@ class DirectionalExpectimaxAgent(MultiAgentSearchAgent):
                 for move in gameState.getLegalActions(agent_index):
                     # if there are no agents every call we should go one layer deeper.
                     if gameState.getNumAgents() == 1:
-                        v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth-1)
+                        v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index),
+                                                depth - 1)
                     else:
-                        v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index), depth)
+                        v = GetExpectimaxAction(gameState.generateSuccessor(agent_index, move), Turn(agent_index),
+                                                depth)
                     if CurrMax < v[0] or (CurrMax == v[0] and maxDepth < v[2]):
                         CurrMax = v[0]
                         MaxAction = move
